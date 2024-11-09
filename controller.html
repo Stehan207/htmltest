@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamepad Test</title>
+</head>
+<body>
+    <h1>Connect a Game Controller</h1>
+    <script>
+window.addEventListener("gamepadconnected", (event) => {
+    console.log("Gamepad connected:", event.gamepad);
+});
+
+window.addEventListener("gamepaddisconnected", (event) => {
+    console.log("Gamepad disconnected:", event.gamepad);
+});
+      
+      function updateGamepadStatus() {
+    const gamepads = navigator.getGamepads(); // ゲームパッドの情報を取得
+    const gamepad = gamepads[0]; // 最初に接続されたコントローラーを対象に
+
+    if (gamepad) {
+        // ボタンの状態を表示
+        gamepad.buttons.forEach((button, index) => {
+            if (button.pressed) {
+                console.log(`Button ${index} is pressed`);
+            }
+        });
+
+        // スティック（アナログ入力）の状態を表示
+        gamepad.axes.forEach((axis, index) => {
+            console.log(`Axis ${index}: ${axis.toFixed(2)}`);
+        });
+    }
+
+    // 次のフレームをリクエスト
+    requestAnimationFrame(updateGamepadStatus);
+}
+
+// 初期化
+window.addEventListener("gamepadconnected", () => {
+    console.log("Starting gamepad input loop");
+    requestAnimationFrame(updateGamepadStatus);
+});
+    </script>
+</body>
+</html>
