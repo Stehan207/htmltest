@@ -20,15 +20,15 @@
     <script>
         const statusDiv = document.getElementById("gamepad-status");
         
-window.onload = function(){
-    if ( screenfull.enabled ) {
-      const element = document.querySelector("#photo");
-      screenfull.request(element);
-    }
-    else{
-      alert("フルスクリーン未対応ブラウザです。");
-    }
-  });
+    window.onload = function(){
+        if ( screenfull.enabled ) {
+          const element = document.querySelector("#photo");
+          screenfull.request(element);
+        }
+        else{
+          alert("フルスクリーン未対応ブラウザです。");
+        }
+      });
         
         function updateGamepadStatus() {
             const gamepads = navigator.getGamepads();
