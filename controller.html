@@ -3,46 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gamepad Test</title>
+    <title>Gamepad Status</title>
+    <style>
+        .status {
+            font-family: Arial, sans-serif;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Connect a Game Controller</h1>
+    <h1>Gamepad Status</h1>
+    <div id="gamepad-status" class="status">
+        <p>Connect a game controller to see status updates.</p>
+    </div>
+
     <script>
-window.addEventListener("gamepadconnected", (event) => {
-    console.log("Gamepad connected:", event.gamepad);
-});
+        const statusDiv = document.getElementById("gamepad-status");
 
-window.addEventListener("gamepaddisconnected", (event) => {
-    console.log("Gamepad disconnected:", event.gamepad);
-});
-      
-      function updateGamepadStatus() {
-    const gamepads = navigator.getGamepads(); // ゲームパッドの情報を取得
-    const gamepad = gamepads[0]; // 最初に接続されたコントローラーを対象に
+        function updateGamepadStatus() {
+            const gamepads = navigator.getGamepads();
+            const gamepad = gamepads[0]; // 最初のコントローラーのみを使用
 
-    if (gamepad) {
-        // ボタンの状態を表示
-        gamepad.buttons.forEach((button, index) => {
-            if (button.pressed) {
-                console.log(`Button ${index} is pressed`);
+            if (gamepad) {
+                let statusHTML = `<h2>Gamepad: ${gamepad.id}</h2>`;
+
+                // ボタンの状態を表示
+                statusHTML += "<h3>Buttons:</h3><ul>";
+                gamepad.buttons.forEach((button, index) => {
+                    statusHTML += `<li>Button ${index}: ${button.pressed ? "Pressed" : "Released"}</li>`;
+                });
+                statusHTML += "</ul>";
+
+                // スティック（アナログ入力）の状態を表示
+                statusHTML += "<h3>Axes:</h3><ul>";
+                gamepad.axes.forEach((axis, index) => {
+                    statusHTML += `<li>Axis ${index}: ${axis.toFixed(2)}</li>`;
+                });
+                statusHTML += "</ul>";
+
+                // HTMLを更新
+                statusDiv.innerHTML = statusHTML;
+            } else {
+                statusDiv.innerHTML = "<p>No gamepad connected</p>";
             }
+
+            // 次のフレームをリクエスト
+            requestAnimationFrame(updateGamepadStatus);
+        }
+
+        // コントローラー接続時のイベントリスナー
+        window.addEventListener("gamepadconnected", () => {
+            console.log("Gamepad connected");
+            requestAnimationFrame(updateGamepadStatus);
         });
 
-        // スティック（アナログ入力）の状態を表示
-        gamepad.axes.forEach((axis, index) => {
-            console.log(`Axis ${index}: ${axis.toFixed(2)}`);
+        // コントローラー切断時のイベントリスナー
+        window.addEventListener("gamepaddisconnected", () => {
+            console.log("Gamepad disconnected");
+            statusDiv.innerHTML = "<p>Gamepad disconnected</p>";
         });
-    }
-
-    // 次のフレームをリクエスト
-    requestAnimationFrame(updateGamepadStatus);
-}
-
-// 初期化
-window.addEventListener("gamepadconnected", () => {
-    console.log("Starting gamepad input loop");
-    requestAnimationFrame(updateGamepadStatus);
-});
     </script>
 </body>
 </html>
