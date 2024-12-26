@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRV8234 Configurer</title>
+</head>
+<body>
+    <h1>DRV 8234 configurer</h1>
+    <button id="connectButton">Connect</button>
+    <select id="deviceList" style="display:none;"></select><BR>
+    Register:
+    <select id="regAddr">
+  		<option value="">Select Register</option>
+    
+  		<option value="0">FAULT (0x00)</option>
+  		<option value="1">SPEED (0x01)</option>
+  		<option value="2">RC_CNT1 (0x02)</option>
+  		<option value="3">RC_CNT2 (0x03)</option>
+  		<option value="4">VMTR (0x04)</option>
+  		<option value="5">IMTR (0x05)</option>
+  		<option value="6">IN_DUTY (0x06)</option>
+  		<option value="9">CONFIG0 (0x09)</option>
+  		<option value="10">TINRUSH1 (0x0A)</option>
+  		<option value="11">TINRUSH2 (0x0B)</option>
+  		<option value="12">CONFIG3 (0x0C)</option>
+  		<option value="13">CONFIG4 (0x0D)</option>
+  		<option value="14">REG_CTRL0 (0x0E)</option>
+  		<option value="15">WSET_VSET (0x0F)</option>
+  		<option value="16">REG_CTRL2 (0x10)</option>
+  		<option value="17">RC_CTRL0 (0x11)</option>
+  		<option value="18">RC_THR (0x12)</option>
+  		<option value="19">RC_CTRL2 (0x13)</option>
+  		<option value="20">INV_R (0x14)</option>
+  		<option value="21">KMC (0x15)</option>
+  		<option value="22">FLT_K (0x16)</option>
+  		<option value="23">RC_CTRL6 (0x17)</option>
+  		<option value="24">KP (0x18)</option>
+  		<option value="25">KI (0x19)</option>
+  		
+	</select>
+    <button id="readButton" style="display:none;">Read</button><BR>
+    (DEC)<input type="text" id="textBox" style="display:none;"><BR>
+    (BIN)<input type="text" id="textBox_Bin" style="display:none;">
+    <button id="writeButton" style="display:none;">Write</button><BR>
+
+
+    <script>
+        let selectedDevice = null;
+        let characteristic = null;
+        let characteristic2 = null;
+        
+        const SERVICE_UUID = 'f2a88d2b-4ec1-453a-8609-2fecf1646218'; // Replace with your service UUID
+        const CHARACTERISTIC_UUID = 'f2a88d2b-4ec1-453a-8609-2fecf1646219'; // for Resister address
+		const CHARACTERISTIC_UUID2 = 'f2a88d2b-4ec1-453a-8609-2fecf1646220'; // for Value
+		const decimalInput = document.getElementById("textBox");
+		const binaryInput = document.getElementById("textBox_Bin");
+		
+        document.getElementById('connectButton').addEventListener('click', async () => {
+            try {
+                // Request devices
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: false,
+                    filters: [{ services: [SERVICE_UUID] }],
+                });
+                selectedDevice = device;
+
+                // Connect to the device
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                characteristic2 = await service.getCharacteristic(CHARACTERISTIC_UUID2);
+
+                // Show UI elements
+                document.getElementById('deviceList').style.display = 'block';
+                const devopt = document.createElement("option");
+                devopt.value = 1;
+                devopt.text = selectedDevice.name;
+                document.getElementById('deviceList').add(devopt, null);
+                document.getElementById('readButton').style.display = 'inline';
+                document.getElementById('writeButton').style.display = 'inline';
+                document.getElementById('textBox').style.display = 'inline';
+                document.getElementById('textBox_Bin').style.display = 'inline';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Connection failed: ' + error.message);
+            }
+        });
+
+        document.getElementById('readButton').addEventListener('click', async () => {
+            try {
+                if (characteristic2) {
+                    const value = await characteristic2.readValue();
+                    const decoder = new TextDecoder('utf-8');
+                    document.getElementById('textBox').value = decoder.decode(value);
+                    		  const decimalValue = parseInt(decimalInput.value, 10);
+		  if (!isNaN(decimalValue)) {
+		    binaryInput.value = decimalValue.toString(2).padStart(8, '0');;
+		  } else {
+		    binaryInput.value = "";
+		  }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Read failed: ' + error.message);
+            }
+        });
+
+        document.getElementById('writeButton').addEventListener('click', async () => {
+            try {
+                if (characteristic2) {
+                    const encoder = new TextEncoder('utf-8');
+                    const value = encoder.encode(document.getElementById('textBox').value);
+                    await characteristic2.writeValue(value);
+                    //alert('Write successful');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Write failed: ' + error.message);
+            }
+        });
+        
+        document.getElementById('regAddr').addEventListener('change', async ()=> {
+            try {
+                if (characteristic) {
+                    const encoder = new TextEncoder('utf-8');
+                    const value = encoder.encode("sr," + document.getElementById('regAddr').value);
+                    await characteristic.writeValue(value);
+                    //alert('Write reg successful');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Write failed: ' + error.message);
+            }        	
+        });
+        // Update binary when decimal changes
+		decimalInput.addEventListener("input", () => {
+		  const decimalValue = parseInt(decimalInput.value, 10);
+		  if (!isNaN(decimalValue)) {
+		    binaryInput.value = decimalValue.toString(2).padStart(8, '0');;
+		  } else {
+		    binaryInput.value = "";
+		  }
+		});
+
+		// Update decimal when binary changes
+		binaryInput.addEventListener("input", () => {
+		  const binaryValue = binaryInput.value;
+		  if (/^[01]*$/.test(binaryValue)) { // Check if input is valid binary
+		    const decimalValue = parseInt(binaryValue, 2);
+		    if (!isNaN(decimalValue)) {
+		      decimalInput.value = decimalValue;
+		    } else {
+		      decimalInput.value = "";
+		    }
+		  } else {
+		    decimalInput.value = "Invalid Binary";
+		  }
+		});
+    </script>
+</body>
+</html>
