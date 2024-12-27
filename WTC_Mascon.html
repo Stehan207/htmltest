@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireless Train Controller</title>
+    <style>
+        .status {
+            font-family: Arial, sans-serif;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wireless Train Controller</h1>
+    <div id="mascon-status" class="status">
+        <p>Connect ZUIKI nascin.</p>
+    </div>
+    <div id="gamepad-status" class="status">
+        <p>Connect a game controller to see status updates.</p>
+    </div>
+
+
+    <script>
+        const masconDiv = document.getElementById("mascon-status");
+        const statusDiv = document.getElementById("gamepad-status");
+            let speed = 0;
+            let lastTimestamp = performance.now();
+
+        function updateGamepadStatus() {
+            const gamepads = navigator.getGamepads();
+            const gamepad = gamepads[0]; // 最初のコントローラーのみを使用
+
+            const currentTimestamp = performance.now();
+            const interval = (currentTimestamp - lastTimestamp).toFixed(2); // ミリ秒単位で計測
+            lastTimestamp = currentTimestamp;
+
+            let Pnotch = 0;
+            let Bnotch = 0;
+            let accelP = [0, 0.4, 0.8, 1.2, 1.6, 2];
+            let v_thP = [0, 15, 25, 50, 70, 86];
+            let accelB = [0, -0.5, -1, -1.5, -2, -2.5, -3, -3.5, -4, -5];
+
+            if (gamepad) {
+                let statusHTML = `<h2>Gamepad: ${gamepad.id}</h2>`;
+
+                // ボタンの状態を表示
+                statusHTML += "<h3>Buttons:</h3><ul>";
+                gamepad.buttons.forEach((button, index) => {
+                    statusHTML += `<li>Button ${index}: ${button.pressed ? "Pressed" : "Released"}</li>`;
+                });
+                statusHTML += "</ul>";
+
+                // スティック（アナログ入力）の状態を表示
+                statusHTML += "<h3>Axes:</h3><ul>";
+                gamepad.axes.forEach((axis, index) => {
+                    statusHTML += `<li>Axis ${index}: ${axis.toFixed(2)}</li>`;
+                });
+                statusHTML += "</ul>";
+
+                // HTMLを更新
+                statusDiv.innerHTML = statusHTML;
+
+                let masconHTML = `<h2>Mascon Status</h2>`;
+                if(gamepad.axes[1] > 0.9) Pnotch = 5;
+                else if(gamepad.axes[1] > 0.71)Pnotch = 4;
+                else if(gamepad.axes[1] > 0.53)Pnotch = 3;
+                else if(gamepad.axes[1] > 0.34)Pnotch = 2;
+                else if(gamepad.axes[1] > 0.12)Pnotch = 1;
+                else Pnotch = 0;
+                if(gamepad.axes[1] > -0.1) Bnotch = 0;
+                else if(gamepad.axes[1] > -0.26)Bnotch = 1;
+                else if(gamepad.axes[1] > -0.37)Bnotch = 2;
+                else if(gamepad.axes[1] > -0.48)Bnotch = 3;
+                else if(gamepad.axes[1] > -0.58)Bnotch = 4;
+                else if(gamepad.axes[1] > -0.70)Bnotch = 5;
+                else if(gamepad.axes[1] > -0.8)Bnotch = 6;
+                else if(gamepad.axes[1] > -0.9)Bnotch = 7;
+                else if(gamepad.axes[1] > -0.98)Bnotch = 8;
+                else Bnotch = 9;
+
+                //Speed Calculate
+                let accel = 0;
+                if(speed > v_thP[Pnotch] + 20) accel = 0;
+                else if(speed > v_thP[Pnotch]) accel = accelP[Pnotch]*(((speed - v_thP[Pnotch])/20.0) -1)*(((speed - v_thP[Pnotch])/20.0) -1);
+                else accel = accelP[Pnotch];
+                let friction = 0;
+                friction = 0.05+(0.2-0.05)*(speed/100)*(speed/100);
+
+                speed += (accel + accelB[Bnotch] - friction)*interval/1000.0;
+                if(speed < 0) speed = 0;
+                if(speed > 100) speed = 100;
+                
+                masconHTML += `Power= ${Pnotch}, Break= ${Bnotch}<BR>`;
+                masconHTML += `Speed = ${speed.toFixed(2)}, Interval= ${interval}<BR>`;
+                masconDiv.innerHTML = masconHTML;
+
+            } else {
+                statusDiv.innerHTML = "<p>No gamepad connected</p>";
+            }
+
+            // 次のフレームをリクエスト
+            requestAnimationFrame(updateGamepadStatus);
+        }
+
+        // コントローラー接続時のイベントリスナー
+        window.addEventListener("gamepadconnected", () => {
+            console.log("Gamepad connected");
+            //updateGamepadStatus();
+            requestAnimationFrame(updateGamepadStatus);
+        });
+
+        // コントローラー切断時のイベントリスナー
+        window.addEventListener("gamepaddisconnected", () => {
+            console.log("Gamepad disconnected");
+            statusDiv.innerHTML = "<p>Gamepad disconnected</p>";
+        });
+    </script>
+</body>
+</html>
