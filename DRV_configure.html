@@ -124,7 +124,7 @@
             try {
                 if (characteristic) {
                     const encoder = new TextEncoder('utf-8');
-                    const value = encoder.encode("sr," + document.getElementById('regAddr').value);
+                    const value = encoder.encode("sa," + document.getElementById('regAddr').value);
                     await characteristic.writeValue(value);
                     //alert('Write reg successful');
                 }
