@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Playground</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        header {
+            background-color: #0078d4;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .settings {
+            margin-bottom: 20px;
+        }
+
+        .settings label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .input-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-box textarea {
+            flex-grow: 1;
+            height: 60px;
+        }
+
+        .input-box button {
+            padding: 10px 20px;
+        }
+
+        .chat-message {
+            margin: 10px 0;
+        }
+
+        .chat-message.user {
+            text-align: right;
+        }
+
+        .chat-message.bot {
+            text-align: left;
+        }
+
+        .editable {
+            border: 1px dashed #999;
+            padding: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GPT Playground</h1>
+    </header>
+    <div class="container">
+        <div class="settings">
+            <label>
+                GPT API URL:
+                <input type="text" id="api-url" placeholder="Enter GPT API URL">
+            </label>
+            <label>
+                Model Name:
+                <input type="text" id="model-name" placeholder="Enter Model Name">
+            </label>
+            <label>
+                API Key:
+                <input type="text" id="api-key" placeholder="Enter API Key">
+            </label>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+            <!-- Chat messages will appear here -->
+        </div>
+
+        <div class="input-box">
+            <textarea id="user-input" placeholder="Type your message..."></textarea>
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const apiUrlInput = document.getElementById('api-url');
+        const modelNameInput = document.getElementById('model-name');
+        const apiKeyInput = document.getElementById('api-key');
+
+        let conversationHistory = '';
+
+        // Load saved settings from cookies
+        document.addEventListener('DOMContentLoaded', () => {
+            apiUrlInput.value = getCookie('apiUrl') || '';
+            modelNameInput.value = getCookie('modelName') || '';
+            apiKeyInput.value = getCookie('apiKey') || '';
+        });
+
+        sendButton.addEventListener('click', async () => {
+            const message = userInput.value;
+            const apiUrl = apiUrlInput.value;
+            const modelName = modelNameInput.value;
+            const apiKey = apiKeyInput.value;
+
+            if (!message || !apiUrl || !modelName || !apiKey) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            // Save settings to cookies
+            setCookie('apiUrl', apiUrl, 30);
+            setCookie('modelName', modelName, 30);
+            setCookie('apiKey', apiKey, 30);
+
+            // Display user message
+            displayMessage(message, 'user');
+            conversationHistory += `User: ${message}\n`;
+
+            // Send message to GPT
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelName,
+                        prompt: conversationHistory,
+                    }),
+                });
+
+                const data = await response.json();
+                const botMessage = data.choices[0].text.trim();
+
+                displayMessage(botMessage, 'bot');
+                conversationHistory += `Bot: ${botMessage}\n`;
+            } catch (error) {
+                console.error('Error:', error);
+                displayMessage('Error communicating with the GPT API.', 'bot');
+            }
+
+            userInput.value = '';
+        });
+
+        function displayMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender} editable`;
+            messageDiv.contentEditable = true;
+            messageDiv.innerText = message;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function setCookie(name, value, days) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${d.toUTCString()}`;
+            document.cookie = `${name}=${value};${expires};path=/`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = `${name}=`;
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>
