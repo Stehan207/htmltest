@@ -62,7 +62,7 @@
             text-align: right;
         }
 
-        .chat-message.bot {
+        .chat-message.assistant {
             text-align: left;
         }
 
@@ -111,7 +111,7 @@
         const modelNameInput = document.getElementById('model-name');
         const apiKeyInput = document.getElementById('api-key');
 
-        let conversationHistory = '';
+        let conversationHistory = [];
 
         // Load saved settings from cookies
         document.addEventListener('DOMContentLoaded', () => {
@@ -138,7 +138,7 @@
 
             // Display user message
             displayMessage(message, 'user');
-            conversationHistory += `role : user','content : ${message}\n`;
+            conversationHistory.push({ role: 'user', content: message });
 
             // Send message to GPT
             try {
@@ -150,18 +150,18 @@
                     },
                     body: JSON.stringify({
                         model: modelName,
-                        messages: conversationHistory,
+                        messages: conversationHistory
                     }),
                 });
 
                 const data = await response.json();
-                const botMessage = data.choices[0].text.trim();
+                const assistantMessage = data.choices[0].message.content.trim();
 
-                displayMessage(botMessage, 'bot');
-                conversationHistory += `role : assistant','content : ${botMessage}\n`;
+                displayMessage(assistantMessage, 'assistant');
+                conversationHistory.push({ role: 'assistant', content: assistantMessage });
             } catch (error) {
                 console.error('Error:', error);
-                displayMessage('Error communicating with the GPT API.', 'bot');
+                displayMessage('Error communicating with the GPT API.', 'assistant');
             }
 
             userInput.value = '';
