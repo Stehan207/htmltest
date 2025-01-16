@@ -138,7 +138,7 @@
 
             // Display user message
             displayMessage(message, 'user');
-            conversationHistory.push({ role: 'user', content: message });
+            updateConversationHistory();
 
             // Send message to GPT
             try {
@@ -172,8 +172,19 @@
             messageDiv.className = `chat-message ${sender} editable`;
             messageDiv.contentEditable = true;
             messageDiv.innerText = message;
+            messageDiv.addEventListener('input', updateConversationHistory);
             chatBox.appendChild(messageDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function updateConversationHistory() {
+            conversationHistory = [];
+            const messages = chatBox.querySelectorAll('.chat-message');
+            messages.forEach(msg => {
+                const role = msg.classList.contains('user') ? 'user' : 'assistant';
+                const content = msg.innerText;
+                conversationHistory.push({ role, content });
+            });
         }
 
         function setCookie(name, value, days) {
