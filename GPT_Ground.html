@@ -71,6 +71,19 @@
             padding: 5px;
             background-color: #f9f9f9;
         }
+
+        .delete-button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .delete-button:hover {
+            background-color: darkred;
+        }
     </style>
 </head>
 <body>
@@ -100,6 +113,7 @@
         <div class="input-box">
             <textarea id="user-input" placeholder="Type your message..."></textarea>
             <button id="send-button">Send</button>
+            <button id="delete-button" class="delete-button">Delete Last</button>
         </div>
     </div>
 
@@ -107,6 +121,7 @@
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
+        const deleteButton = document.getElementById('delete-button');
         const apiUrlInput = document.getElementById('api-url');
         const modelNameInput = document.getElementById('model-name');
         const apiKeyInput = document.getElementById('api-key');
@@ -165,6 +180,18 @@
             }
 
             userInput.value = '';
+        });
+
+        deleteButton.addEventListener('click', () => {
+            const messages = chatBox.querySelectorAll('.chat-message');
+            if (messages.length > 0) {
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage.classList.contains('user')) {
+                    userInput.value = lastMessage.innerText;
+                }
+                lastMessage.remove();
+                updateConversationHistory();
+            }
         });
 
         function displayMessage(message, sender) {
